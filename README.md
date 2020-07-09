@@ -1,0 +1,1 @@
+If you want to add any dependencies, don't forget to run `shards install` and commit your dependencies in the `./lib` folder.

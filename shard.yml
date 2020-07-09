@@ -1,0 +1,17 @@
+name: app
+version: 0.1.0
+
+authors:
+  - tomerun <tomerunmail@gmail.com>
+
+targets:
+  app:
+    main: src/main.cr
+
+dependencies:
+  miller_rabin:
+    github: kuende/miller_rabin
+
+crystal: 0.35.1
+
+license: MIT
