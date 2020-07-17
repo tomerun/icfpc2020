@@ -8,9 +8,10 @@ def main
     puts "ServerUrl: %s; PlayerKey: %s" % [serverurl, playerkey]
 
     uri = URI.parse(serverurl + "/aliens/send?apiKey=#{playerkey}")
-    res = HTTP::Client.post(uri, body: playerkey)
+    res = HTTP::Client.post(uri, body: "1101000")
     if res.status_code == 200
       puts "Server response: %s" % res.body
+      puts res.headers
     else
       puts "Unexpected server response:"
       puts "HTTP code: %d" % res.status_code
