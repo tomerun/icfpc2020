@@ -1,17 +1,27 @@
 require "http/client"
 require "uri"
-require "miller_rabin"
 
 def main
-  puts MillerRabin.probably_prime(10459103, 100)
+  begin
+    serverurl = ARGV[0]
+    playerkey = ARGV[1]
+    puts "ServerUrl: %s; PlayerKey: %s" % [serverurl, playerkey]
 
-  serverurl = ARGV[0]
-  playerkey = ARGV[1]
-  puts "ServerUrl: %s; PlayerKey: %s" % [serverurl, playerkey]
-
-  uri = URI.parse(serverurl + "?playerKey=#{playerkey}")
-  res = HTTP::Client.get uri
-  puts res.status_code
+    uri = URI.parse(serverurl + "/aliend/send?apiKey=#{playerkey}")
+    res = HTTP::Client.post(uri, body: "0")
+    if res.status_code == 200
+      puts "Server response: %s" % res.body
+    else
+      puts "Unexpected server response:"
+      puts "HTTP code: %d" % res.status_code
+      puts "Response body: %s" % res.body
+      exit(2)
+    end
+  rescue e
+    puts "Unexpected server response:"
+    puts e.inspect_with_backtrace
+    exit(1)
+  end
 end
 
 main
