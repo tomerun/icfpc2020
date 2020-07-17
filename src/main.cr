@@ -7,8 +7,8 @@ def main
     playerkey = ARGV[1]
     puts "ServerUrl: %s; PlayerKey: %s" % [serverurl, playerkey]
 
-    uri = URI.parse(serverurl + "/aliend/send?apiKey=#{playerkey}")
-    res = HTTP::Client.post(uri, body: "0")
+    uri = URI.parse(serverurl + "/aliens/send?apiKey=#{playerkey}")
+    res = HTTP::Client.post(uri, body: playerkey)
     if res.status_code == 200
       puts "Server response: %s" % res.body
     else
