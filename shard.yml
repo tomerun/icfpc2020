@@ -8,9 +8,7 @@ targets:
   app:
     main: src/main.cr
 
-dependencies:
-  miller_rabin:
-    github: kuende/miller_rabin
+# dependencies:
 
 crystal: 0.35.1
 
