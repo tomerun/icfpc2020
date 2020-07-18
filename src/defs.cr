@@ -596,11 +596,11 @@ class Cons < Arity3
     if x1 = @x1
       @x1 = x1.reduce
     end
-    # if @x2
-    #   inner = Ap.new(@x2, @x0)
-    #   outer = Ap.new(inner, @x1)
-    #   return outer.reduce
-    # end
+    if @x2
+      inner = Ap.new(@x2, @x0)
+      outer = Ap.new(inner, @x1)
+      return outer.reduce
+    end
     return self
   end
 end
