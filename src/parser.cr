@@ -76,8 +76,3 @@ class Parser
     end
   end
 end
-
-ARGF.each_line do |line|
-  parser = Parser.new(line)
-  puts parser.parse_assign
-end

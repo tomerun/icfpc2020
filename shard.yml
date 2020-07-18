@@ -9,8 +9,8 @@ targets:
     main: src/main.cr
   modem:
     main: src/modem.cr
-  parser:
-    main: src/parser.cr
+  reducer:
+    main: src/reducer.cr
 
 # dependencies:
 

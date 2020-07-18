@@ -87,7 +87,3 @@ end
 def demod(str : String) : Node
   return demod(str, 0)[0]
 end
-
-while true
-  puts demod(read_line)
-end
