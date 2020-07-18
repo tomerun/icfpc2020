@@ -7,6 +7,10 @@ authors:
 targets:
   app:
     main: src/main.cr
+  modem:
+    main: src/modem.cr
+  parser:
+    main: src/parser.cr
 
 # dependencies:
 

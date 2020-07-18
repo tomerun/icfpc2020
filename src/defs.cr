@@ -21,7 +21,7 @@ end
 abstract class Arity1 < Node
   getter :x0
 
-  def initialize(@x0 : Node | Nil = nil)
+  def initialize(@x0 : Node? = nil)
   end
 
   def param_count
@@ -44,7 +44,7 @@ end
 abstract class Arity2 < Node
   getter :x0, :x1
 
-  def initialize(@x0 : Node | Nil = nil, @x1 : Node | Nil = nil)
+  def initialize(@x0 : Node? = nil, @x1 : Node? = nil)
   end
 
   def param_count
@@ -69,7 +69,7 @@ end
 abstract class Arity3 < Node
   getter :x0, :x1, :x2
 
-  def initialize(@x0 : Node | Nil = nil, @x1 : Node | Nil = nil, @x2 : Node | Nil = nil)
+  def initialize(@x0 : Node? = nil, @x1 : Node? = nil, @x2 : Node? = nil)
   end
 
   def param_count
@@ -280,4 +280,10 @@ class Assign
 end
 
 class TypeMismatchError < Exception
+end
+
+def assert(x, msg : String? = nil)
+  if !x
+    raise Exception.new(msg)
+  end
 end
