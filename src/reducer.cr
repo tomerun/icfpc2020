@@ -32,8 +32,12 @@ class Reducer
       top2 = Ap.new(top1, data)
       res = top2.reduce.not_nil!
       puts String.build { |io| res.to_s(io, 0) }
+      flag = res.as(Cons).car
+      puts "flag:#{flag}"
       state = res.as(Cons).cdr.as(Cons).car
-      puts state
+      puts "state:#{state}"
+      data = res.as(Cons).cdr.as(Cons).cdr
+      puts "data:#{data}"
     end
   end
 end
