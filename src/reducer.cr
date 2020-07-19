@@ -23,35 +23,12 @@ class Reducer
         protocol = parser.parse_expr
       end
     end
-    # state = NilAtom.new
-    # # l0 = Ap.new(Ap.new(Cons.new, IntAtom.new(0)), NilAtom.new)
-    # # l1 = Ap.new(Ap.new(Cons.new, IntAtom.new(0)), l0)
-    # input = [] of List
-    # input << BigInt.new(0) << BigInt.new(0)
-    # data = from_list(input)
-    # while true
-    #   reduced = execute_single(protocol.not_nil!, state, data)
-    #   result = get_list(reduced)
-    #   flag = result[0].as(BigInt)
-    #   puts "flag:#{flag}"
-    #   state_list = result[1].as(Array(List))
-    #   puts "state:#{state}"
-    #   state = from_list(state_list)
-    #   data = result[2]
-    #   puts "data:#{data}"
-    #   break if flag == 0
-    #   received = read_line
-    #   data = demod(received)
-    #   puts "received:#{received}"
-    #   puts "new_data:#{data}"
-    # end
-
-    pos = [[0, 0], [2, 3], [1, 2], [3, 2], [4, 0]]
     state = NilAtom.new
-    pos.each do |p|
-      input = [] of List
-      input << BigInt.new(p[0]) << BigInt.new(p[1])
-      data = from_list(input)
+    input = [] of List
+    input << BigInt.new(0) << BigInt.new(0)
+    data = from_list(input)
+    data = Ap.new(Ap.new(Cons.new, IntAtom.new(0)), IntAtom.new(0))
+    while true
       reduced = execute_single(protocol.not_nil!, state, data)
       result = get_list(reduced)
       puts "result:#{result}"
@@ -62,16 +39,38 @@ class Reducer
       state = from_list(state_list)
       data = result[2]
       puts "data:#{data}"
-      # received = read_line
-      # data = demod(received)
-      # puts "received:#{received}"
-      # puts "new_data:#{data}"
+      break if flag == 0
+      received = read_line
+      data = demod(received)
+      puts "received:#{received}"
+      puts "new_data:#{data}"
     end
+
+    # pos = [[0, 0], [2, 3], [1, 2], [3, 2], [4, 0]]
+    # state = NilAtom.new
+    # pos.each do |p|
+    #   input = [] of List
+    #   input << BigInt.new(p[0]) << BigInt.new(p[1])
+    #   data = from_list(input)
+    #   reduced = execute_single(protocol.not_nil!, state, data)
+    #   result = get_list(reduced)
+    #   puts "result:#{result}"
+    #   flag = result[0].as(BigInt)
+    #   puts "flag:#{flag}"
+    #   state_list = result[1].as(Array(List))
+    #   puts "state:#{state}"
+    #   state = from_list(state_list)
+    #   data = result[2]
+    #   puts "data:#{data}"
+    #   # received = read_line
+    #   # data = demod(received)
+    #   # puts "received:#{received}"
+    #   # puts "new_data:#{data}"
+    # end
   end
 
   def execute_single(protocol, state, data)
-    protocol.clear
-    top1 = Ap.new(protocol, state)
+    top1 = Ap.new(protocol.clone, state)
     top2 = Ap.new(top1, data)
     @context.root = top2
     puts String.build { |io| top2.to_s(io, 0) }
@@ -96,7 +95,14 @@ end
 
 def get_list(node : Node)
   l = [] of List
-  while !node.is_a?(NilAtom)
+  while true
+    if node.is_a?(NilAtom)
+      break
+    end
+    if node.is_a?(IntAtom)
+      l << BigInt.new(node.v)
+      break
+    end
     assert(node.is_a?(Ap))
     assert(node.as(Ap).x0.as(Ap).x0.is_a?(Cons))
     car = node.as(Ap).x0.as(Ap).x1

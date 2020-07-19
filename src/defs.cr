@@ -1,35 +1,89 @@
 require "big"
 
+NODE_ID = [0i64]
+
 abstract class Node
   @reduced : Node?
-  property :reduced
+  @id : Int64
+  property :reduced, :id
 
+  def initialize
+    @id = NODE_ID[0]
+    NODE_ID[0] += 1
+    # puts "node created #{self.class} #{@id}"
+  end
+
+  abstract def arity
   abstract def name
   abstract def to_s(io : IO, level : Int)
   abstract def reduce_(ctx : ReduceContext, params : Array(Node))
 
-  def reduce(ctx : ReduceContext, params : Array(Node))
-    if @reduced
-      return @reduced
+  def reduce(ctx : ReduceContext)
+    if memo = @reduced
+      # puts "ret reduced #{self.id} #{@reduced.not_nil!.id} #{self}"
+      return memo
     end
-    # puts "reduce #{self.hash} #{self.inspect}"
+
     node = self
     while true
-      ret = node.reduce_(ctx, params).not_nil!
-      params.clear
-      if ret == node
-        @reduced = node
+      # puts "reduce #{node.id} #{node}"
+      if node.reduced
+        break if node == node.reduced
+        node = node.reduced
+      end
+      if node.is_a?(Var)
+        # puts "reduce var #{node.n}"
+        node = ctx.vars[node.n].clone
+        next
+      end
+      if !node.is_a?(Ap)
         break
       end
-      node = ret
+      args = [] of Node
+      args << node.x1.not_nil!
+      op = node.x0.not_nil!
+      op = node.x0 = op.reduce(ctx).not_nil!
+      before = node
+      if !op.is_a?(Ap)
+        if op.is_a?(Arity1)
+          node = op.reduce_(ctx, args)
+          if node == before
+            break
+          end
+          next
+        end
+      else
+        args.unshift(op.x1.not_nil!)
+        op = op.x0.not_nil!
+        if !op.is_a?(Ap)
+          if op.is_a?(Arity2) || op.is_a?(Cons)
+            node = op.reduce_(ctx, args)
+            if node == before
+              break
+            end
+            next
+          end
+        else
+          args.unshift(op.x1.not_nil!)
+          op = op.x0.not_nil!
+          if op.is_a?(Arity3)
+            node = op.reduce_(ctx, args)
+            if node == before
+              break
+            end
+            next
+          end
+        end
+      end
+      break
     end
-    # puts "end reduce #{self.hash}"
-    # puts String.build { |io| ctx.root.not_nil!.to_s(io, 0) }
+    # puts "end reduce #{self.id}"
+    @reduced = node
+    # if node != self
+    #   puts "reduce changed : #{node.class} #{node.id}"
+    #   puts String.build { |io| node.to_s(io, 0) }
+    # end
     return node
-  end
-
-  def reduce(ctx : ReduceContext)
-    return reduce(ctx, [] of Node)
   end
 
   def to_s(io)
@@ -37,40 +91,62 @@ abstract class Node
   end
 
   def to_s(io, level)
-    io << "  " * level << self.name << " #{self.hash}" << "\n"
+    io << "  " * level << self.name << " #{self.id}" << "\n"
   end
 
-  def clear
-    return self.reduced = nil
+  def clone
+    return self
   end
 end
 
 abstract class Arity0 < Node
+  def arity
+    return 0
+  end
 end
 
 abstract class Arity1 < Node
+  def arity
+    return 1
+  end
 end
 
 abstract class Arity2 < Node
+  def arity
+    return 2
+  end
 end
 
 abstract class Arity3 < Node
+  def arity
+    return 3
+  end
+
+  def clone
+    return self.class.new
+  end
 end
 
 abstract class ArityN < Node
+  def arity
+    return 0
+  end
 end
 
 class IntAtom < Arity0
   getter :v
 
   def initialize(@v : BigInt)
+    super()
   end
 
   def initialize(v : Int)
+    super()
     @v = BigInt.new(v)
   end
 
   def initialize
+    super()
     @v = BigInt.ZERO
   end
 
@@ -92,6 +168,10 @@ class Inc < Arity1
     x0 = params[0].reduce(ctx)
     return IntAtom.new(x0.as(IntAtom).v + 1)
   end
+
+  def clone
+    return Inc.new
+  end
 end
 
 class Dec < Arity1
@@ -102,6 +182,10 @@ class Dec < Arity1
   def reduce_(ctx, params)
     x0 = params[0].reduce(ctx)
     return IntAtom.new(x0.as(IntAtom).v - 1)
+  end
+
+  def clone
+    return Dec.new
   end
 end
 
@@ -114,6 +198,10 @@ class Add < Arity2
     x0 = params[0].reduce(ctx)
     x1 = params[1].reduce(ctx)
     return IntAtom.new(x0.as(IntAtom).v + x1.as(IntAtom).v)
+  end
+
+  def clone
+    return Add.new
   end
 end
 
@@ -129,11 +217,11 @@ class Var < ArityN
   end
 
   def reduce_(ctx, params)
-    node = ctx.vars[@n]
-    params.each do |param|
-      node = Ap.new(param, node)
-    end
-    return node.reduce(ctx)
+    return self
+  end
+
+  def clone
+    return Var.new(@n)
   end
 end
 
@@ -147,6 +235,10 @@ class Mul < Arity2
     x1 = params[1].reduce(ctx)
     return IntAtom.new(x0.as(IntAtom).v * x1.as(IntAtom).v)
   end
+
+  def clone
+    return Mul.new
+  end
 end
 
 class Div < Arity2
@@ -158,6 +250,10 @@ class Div < Arity2
     x0 = params[0].reduce(ctx)
     x1 = params[1].reduce(ctx)
     return IntAtom.new(x0.as(IntAtom).v.tdiv(x1.as(IntAtom).v))
+  end
+
+  def clone
+    return Div.new
   end
 end
 
@@ -175,6 +271,10 @@ class Eq < Arity2
       return False.new
     end
   end
+
+  def clone
+    return Eq.new
+  end
 end
 
 class LessThan < Arity2
@@ -191,6 +291,10 @@ class LessThan < Arity2
       return False.new
     end
   end
+
+  def clone
+    return LessThan.new
+  end
 end
 
 class Neg < Arity1
@@ -202,12 +306,17 @@ class Neg < Arity1
     x0 = params[0].reduce(ctx)
     return IntAtom.new(-x0.as(IntAtom).v)
   end
+
+  def clone
+    return Neg.new
+  end
 end
 
-class Ap < Arity2
+class Ap < Arity0
   property :x0, :x1
 
   def initialize(@x0 : Node, @x1 : Node)
+    super()
   end
 
   def name
@@ -220,7 +329,7 @@ class Ap < Arity2
   end
 
   def to_s(io, level)
-    io << "  " * level << "ap #{self.hash}\n"
+    io << "  " * level << "ap #{self.id}\n"
     if x0 = @x0
       x0.to_s(io, level + 1)
     else
@@ -234,46 +343,11 @@ class Ap < Arity2
   end
 
   def reduce_(ctx, params)
-    node = self
-    while node.is_a?(Ap) && !node.reduced
-      # puts "reduce_ #{node.hash} #{node}"
-      args = [] of Node
-      args << node.x1.not_nil!
-      op = node.x0.not_nil!
-      if op.is_a?(Ap)
-        op = node.x0 = op.reduce(ctx).not_nil!
-      end
-      if !op.is_a?(Ap)
-        if op.is_a?(Arity1)
-          node = op.reduce(ctx, args)
-          next
-        end
-      else
-        args.unshift(op.x1.not_nil!)
-        op = op.x0.not_nil!
-        if !op.is_a?(Ap)
-          if op.is_a?(Arity2) || op.is_a?(Var) || op.is_a?(Cons)
-            node = op.reduce(ctx, args)
-            next
-          end
-        else
-          args.unshift(op.x1.not_nil!)
-          op = op.x0.not_nil!
-          if op.is_a?(Arity3) || op.is_a?(Var)
-            node = op.reduce(ctx, args)
-            next
-          end
-        end
-      end
-      break
-    end
-    return node
+    return self
   end
 
-  def clear
-    @x0.clear
-    @x1.clear
-    @reduced = nil
+  def clone
+    return Ap.new(@x0.clone, @x1.clone)
   end
 end
 
@@ -322,6 +396,10 @@ class True < Arity2
   def reduce_(ctx, params)
     return params[0]
   end
+
+  def clone
+    return True.new
+  end
 end
 
 class False < Arity2
@@ -331,6 +409,10 @@ class False < Arity2
 
   def reduce_(ctx, params)
     return params[1]
+  end
+
+  def clone
+    return False.new
   end
 end
 
@@ -342,6 +424,10 @@ class Icomb < Arity1
   def reduce_(ctx, params)
     return params[0]
   end
+
+  def clone
+    return Icomb.new
+  end
 end
 
 class Cons < Arity3
@@ -349,7 +435,8 @@ class Cons < Arity3
     super()
   end
 
-  def initialize(@car : Node?, @cdr : Node?)
+  def arity
+    return 2
   end
 
   def name
@@ -362,7 +449,7 @@ class Cons < Arity3
       outer = Ap.new(inner, params[1])
       return outer
     elsif params.size == 2
-      inner = Ap.new(self, params[0].reduce(ctx).not_nil!)
+      inner = Ap.new(Cons.new, params[0].reduce(ctx).not_nil!)
       outer = Ap.new(inner, params[1].reduce(ctx).not_nil!)
       outer.reduced = outer
       return outer
@@ -380,6 +467,10 @@ class Car < Arity1
   def reduce_(ctx, params)
     return Ap.new(params[0], True.new)
   end
+
+  def clone
+    return Car.new
+  end
 end
 
 class Cdr < Arity1
@@ -389,6 +480,10 @@ class Cdr < Arity1
 
   def reduce_(ctx, params)
     return Ap.new(params[0], False.new)
+  end
+
+  def clone
+    return Cdr.new
   end
 end
 
@@ -404,6 +499,10 @@ class NilAtom < Arity1
       return self
     end
   end
+
+  def clone
+    return NilAtom.new
+  end
 end
 
 class IsNil < Arity1
@@ -412,14 +511,19 @@ class IsNil < Arity1
   end
 
   def reduce_(ctx, params)
-    x0 = params[0].reduce(ctx)
-    if x0.is_a?(NilAtom)
-      return True.new
-    else
-      assert(x0.is_a?(Cons))
-      return False.new
-    end
-    return self
+    return Ap.new(params[0], Ap.new(True.new, Ap.new(True.new, False.new)))
+    # x0 = params[0].reduce(ctx)
+    # if x0.is_a?(NilAtom)
+    #   return True.new
+    # else
+    #   assert(x0.is_a?(Cons))
+    #   return False.new
+    # end
+    # return self
+  end
+
+  def clone
+    return IsNil.new
   end
 end
 
@@ -429,7 +533,7 @@ class IfZero < Arity3
   end
 
   def reduce_(ctx, params)
-    x0 = params[0].reduce(ctx, params)
+    x0 = params[0].reduce(ctx)
     if x0.as(IntAtom).v == 0
       return params[1]
     else

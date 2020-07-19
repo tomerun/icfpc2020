@@ -63,7 +63,7 @@ def demod(str : String, pos : Int32) : Tuple(Node, Int32)
   if str[pos] == '1' && str[pos + 1] == '1'
     car, pos = demod(str, pos + 2)
     cdr, pos = demod(str, pos)
-    return {Cons.new(car, cdr), pos}
+    return {Ap.new(Ap.new(Cons.new, car), cdr), pos}
   elsif str[pos] == '0' && str[pos + 1] == '0'
     return {NilAtom.new, pos + 2}
   else
