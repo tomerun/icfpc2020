@@ -72,7 +72,7 @@ class Player
             v = [] of List
             v << bi(s.pos[0]) << bi(s.pos[1])
             cmd = [] of List
-            cmd << CMD_ACC << s.id << v
+            cmd << CMD_ACC << s.id << v << [] of List
             cs << cmd
             next
           end
@@ -90,10 +90,12 @@ class Player
           v = [] of List
           v << bi(-mx) << bi(-my)
           cmd = [] of List
-          cmd << CMD_ACC << s.id << v
+          cmd << CMD_ACC << s.id << v << [] of List
           cs << cmd
         end
-
+        if !cs.empty?
+          cs << [] of List
+        end
         commands(cs)
       end
     rescue e
@@ -108,11 +110,11 @@ class Player
   end
 
   def start(x0 : BigInt, x1 : BigInt, x2 : BigInt, x3 : BigInt)
-    return request([START, @player_key, [x0, x1, x2, x3]])
+    return request([START, @player_key, [x0, x1, x2, x3, [] of List], [] of List])
   end
 
   def commands(commands : List)
-    return request([COMMANDS, @player_key, commands])
+    return request([COMMANDS, @player_key, commands, [] of List])
   end
 
   def request(input : Array(List)) : List
@@ -122,6 +124,7 @@ class Player
     if res.status_code == 200
       ret = get_list(res.body)
       puts "Server response: #{ret}"
+      puts "#{res.body}"
       assert(ret[0] == 1)
       if ret[1] == 2
         exit(0)
