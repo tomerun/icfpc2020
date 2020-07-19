@@ -1,11 +1,8 @@
 require "./defs.cr"
 
-def mod(v : NilAtom, io)
-  io << "00"
-end
+alias List = BigInt | Array(List)
 
-def mod(v : IntAtom, io)
-  i = v.v
+def mod(i : BigInt, io)
   if i < 0
     io << "10"
     i = i.abs
@@ -20,42 +17,24 @@ def mod(v : IntAtom, io)
   end
 end
 
-def mod(v : Cons, io)
-  io << "11"
-  case car = v.car
-  when Cons
-    mod(car, io)
-  when IntAtom
-    mod(car, io)
-  when NilAtom
-    mod(car, io)
+def mod(l : List, io)
+  case l
+  when BigInt
+    mod(l, io)
   else
-    raise TypeMismatchError.new(car.to_s)
-  end
-  case cdr = v.cdr
-  when Cons
-    mod(cdr, io)
-  when IntAtom
-    mod(cdr, io)
-  when NilAtom
-    mod(cdr, io)
-  else
-    raise TypeMismatchError.new(cdr.to_s)
+    if l.size == 0
+      io << "00"
+    else
+      io << "11"
+      mod(l[0], io)
+      mod(l[1..], io)
+    end
   end
 end
 
-def mod(node : Node) : String
+def mod(l : List) : String
   return String.build do |io|
-    case node
-    when Cons
-      mod(node, io)
-    when IntAtom
-      mod(node, io)
-    when NilAtom
-      mod(node, io)
-    else
-      raise TypeMismatchError.new(node.to_s)
-    end
+    mod(l, io)
   end
 end
 

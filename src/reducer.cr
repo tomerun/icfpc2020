@@ -2,8 +2,6 @@ require "./defs.cr"
 require "./modem.cr"
 require "./parser.cr"
 
-alias List = BigInt | Array(List)
-
 class Reducer
   def initialize
     @context = ReduceContext.new
@@ -29,54 +27,78 @@ class Reducer
     data = from_list(input)
     data = Ap.new(Ap.new(Cons.new, IntAtom.new(0)), IntAtom.new(0))
     while true
-      reduced = execute_single(protocol.not_nil!, state, data)
-      result = get_list(reduced)
-      puts "result:#{result}"
-      flag = result[0].as(BigInt)
-      puts "flag:#{flag}"
-      state_list = result[1].as(Array(List))
-      state = from_list(state_list)
-      puts "state:#{state}"
-      data = result[2]
-      puts "data:#{data}"
-      break if flag == 0
-      received = read_line
-      data = demod(received)
-      puts "received:#{received}"
-      puts "new_data:#{data}"
+      while true
+        reduced = execute_single(protocol.not_nil!, state, data)
+        result = get_list(reduced)
+        puts "result:#{result}"
+        flag = result[0].as(BigInt)
+        puts "flag:#{flag}"
+        state_list = result[1].as(Array(List))
+        state = from_list(state_list)
+        # puts "state:#{state}"
+        data = result[2].as(Array(List))
+        puts "data:#{data}"
+        draw(data)
+        break if flag == 0
+        puts "send #{mod(data)}"
+        received = read_line
+        data = demod(received)
+        puts "received:#{received}"
+        puts "new_data:#{data}"
+      end
+      puts "input next pos"
+      y, x = read_line.split.map(&.to_i)
+      puts "click (#{y},#{x})"
+      data = Ap.new(Ap.new(Cons.new, IntAtom.new(x)), IntAtom.new(y))
     end
-
-    # pos = [[0, 0], [2, 3], [1, 2], [3, 2], [4, 0]]
-    # state = NilAtom.new
-    # pos.each do |p|
-    #   input = [] of List
-    #   input << BigInt.new(p[0]) << BigInt.new(p[1])
-    #   data = from_list(input)
-    #   reduced = execute_single(protocol.not_nil!, state, data)
-    #   result = get_list(reduced)
-    #   puts "result:#{result}"
-    #   flag = result[0].as(BigInt)
-    #   puts "flag:#{flag}"
-    #   state_list = result[1].as(Array(List))
-    #   puts "state:#{state}"
-    #   state = from_list(state_list)
-    #   data = result[2]
-    #   puts "data:#{data}"
-    #   # received = read_line
-    #   # data = demod(received)
-    #   # puts "received:#{received}"
-    #   # puts "new_data:#{data}"
-    # end
   end
 
   def execute_single(protocol, state, data)
     top1 = Ap.new(protocol.clone, state)
     top2 = Ap.new(top1, data)
     @context.root = top2
-    puts String.build { |io| top2.to_s(io, 0) }
+    # puts String.build { |io| top2.to_s(io, 0) }
     res = top2.reduce(@context).not_nil!
-    puts String.build { |io| res.to_s(io, 0) }
+    # puts String.build { |io| res.to_s(io, 0) }
     return res
+  end
+end
+
+def draw(data : Array(List))
+  pos = Array(Tuple(Int32, Int32)).new
+  data.each do |e|
+    e.as(Array(List)).each do |p|
+      x = p.as(Array(List))[0].as(BigInt).to_i
+      y = p.as(Array(List))[1].as(BigInt).to_i
+      pos << {y, x}
+    end
+  end
+  minx = 0
+  maxx = 0
+  miny = 0
+  maxy = 0
+  pos.each do |p|
+    minx = {minx, p[1]}.min
+    maxx = {maxx, p[1]}.max
+    miny = {miny, p[0]}.min
+    maxy = {maxy, p[0]}.max
+  end
+  puts "(#{minx},#{miny})-(#{maxx},#{maxy})"
+  screen = Array.new(maxy - miny + 1) { Array.new(maxx - minx + 1, false) }
+  pos.each do |p|
+    screen[p[0] - miny][p[1] - minx] = true
+  end
+  top = "   " + minx.to_s
+  top += " " * (maxx - minx - top.size - 1 + 3)
+  top += maxx.to_s
+  puts
+  puts top
+  miny.upto(maxy) do |y|
+    printf("% 2d ", y)
+    screen[y - miny].each do |pixel|
+      print(pixel ? "#" : " ")
+    end
+    puts
   end
 end
 
