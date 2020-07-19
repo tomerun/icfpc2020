@@ -74,12 +74,7 @@ class Player
           next if vx == 0 && vy == 0
           if (s.pos[0] + vx).abs <= 16 && (s.pos[1] + vy).abs <= 16 ||
              (s.pos[0] + vx * 2).abs <= 16 && (s.pos[1] + vy * 2).abs <= 16
-            v = [] of List
-            v << bi(s.pos[0]) << bi(s.pos[1])
-            puts "accel: #{dx} #{dy} #{s.id}"
-            cmd = [] of List
-            cmd << CMD_ACC << s.id << v << [] of List
-            cs << cmd
+            cs << create_acc(s.id, s.pos[0], s.pos[1])
             next
           end
           cos = (dx * vx + dy * vy) / (((dx ** 2 + dy ** 2)**0.5) * ((vx ** 2 + vy ** 2) ** 0.5))
@@ -92,12 +87,7 @@ class Player
             mx = vy
             my = -vx
           end
-          v = [] of List
-          v << bi(-mx) << bi(-my)
-          puts "accel: #{mx} #{my} #{s.id}"
-          cmd = [] of List
-          cmd << CMD_ACC << s.id << v << [] of List
-          cs << cmd
+          cs << create_acc(s.id, mx, my)
         end
         if !cs.empty?
           cs << [] of List
@@ -132,7 +122,7 @@ class Player
       (mx * x + my * y) / ((x * x + y * y) ** 0.5)
     end)
     v << bi(-dir[0]) << bi(-dir[1])
-    puts "accel: (#{mx} #{my}) (#{dx} #{dy}) #{ship_id}"
+    puts "accel: (#{mx} #{my}) (#{dir[0]} #{dir[1]}) #{ship_id}"
     cmd = [] of List
     cmd << CMD_ACC << ship_id << v << [] of List
   end
