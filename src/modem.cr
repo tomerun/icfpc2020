@@ -66,3 +66,48 @@ end
 def demod(str : String) : Node
   return demod(str, 0, 0)[0]
 end
+
+def from_list(l : Array(List)) : Node
+  prev = NilAtom.new
+  l.reverse.each do |e|
+    if e.is_a?(BigInt)
+      car = IntAtom.new(e)
+    else
+      car = from_list(e)
+    end
+    prev = Ap.new(Ap.new(Cons.new, car), prev)
+  end
+  return prev
+end
+
+def get_list(str : String) : Array(List)
+  return get_list(demod(str))
+end
+
+def get_list(node : Node) : Array(List)
+  l = [] of List
+  while true
+    if node.is_a?(NilAtom)
+      break
+    end
+    if node.is_a?(IntAtom)
+      l << BigInt.new(node.v)
+      break
+    end
+    assert(node.is_a?(Ap))
+    assert(node.as(Ap).x0.as(Ap).x0.is_a?(Cons))
+    car = node.as(Ap).x0.as(Ap).x1
+    case car
+    when IntAtom
+      l << BigInt.new(car.as(IntAtom).v)
+    when NilAtom
+      l << [] of List
+    when Ap
+      l << get_list(car)
+    else
+      assert(false, car.to_s)
+    end
+    node = node.as(Ap).x1
+  end
+  return l
+end
