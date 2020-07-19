@@ -38,10 +38,10 @@ def mod(l : List) : String
   end
 end
 
-def demod(str : String, pos : Int32) : Tuple(Node, Int32)
+def demod(str : String, pos : Int32, depth : Int32) : Tuple(Node, Int32)
   if str[pos] == '1' && str[pos + 1] == '1'
-    car, pos = demod(str, pos + 2)
-    cdr, pos = demod(str, pos)
+    car, pos = demod(str, pos + 2, 0)
+    cdr, pos = demod(str, pos, depth + 1)
     return {Ap.new(Ap.new(Cons.new, car), cdr), pos}
   elsif str[pos] == '0' && str[pos + 1] == '0'
     return {NilAtom.new, pos + 2}
@@ -64,5 +64,5 @@ def demod(str : String, pos : Int32) : Tuple(Node, Int32)
 end
 
 def demod(str : String) : Node
-  return demod(str, 0)[0]
+  return demod(str, 0, 0)[0]
 end
