@@ -124,6 +124,21 @@ class Player
     return request([COMMANDS, @player_key, commands, [] of List])
   end
 
+  def create_acc(ship_id, mx, my)
+    v = [] of List
+    dx = 0
+    dy = 0
+    if x.abs <= y.abs
+      dy = y > 0 ? 1 : -1
+    else
+      dx = x > 0 ? 1 : -1
+    end
+    v << bi(-dx) << bi(-dy)
+    puts "accel: (#{mx} #{my}) (#{dx} #{dy}) #{ship_id}"
+    cmd = [] of List
+    cmd << CMD_ACC << ship_id << v << [] of List
+  end
+
   def request(input : Array(List)) : List
     body = mod(input)
     puts "req: #{body}"
