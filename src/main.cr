@@ -51,6 +51,8 @@ class Player
         @enemy_ships << ship
       end
     end
+    puts "my_ships: #{@my_ships}"
+    puts "enemy_ships: #{@enemy_ships}"
   end
 
   def play
@@ -66,19 +68,22 @@ class Player
         @my_ships.each do |s|
           vx = s.vel[0]
           vy = s.vel[1]
+          dx = -s.pos[0]
+          dy = -s.pos[1]
+          puts "#{vx} #{vy} #{dx} #{dy}"
           next if vx == 0 && vy == 0
           if (s.pos[0] + vx).abs <= 16 && (s.pos[1] + vy).abs <= 16 ||
              (s.pos[0] + vx * 2).abs <= 16 && (s.pos[1] + vy * 2).abs <= 16
             v = [] of List
             v << bi(s.pos[0]) << bi(s.pos[1])
+            puts "accel: #{dx} #{dy} #{s.id}"
             cmd = [] of List
             cmd << CMD_ACC << s.id << v << [] of List
             cs << cmd
             next
           end
-          dx = -s.pos[0]
-          dy = -s.pos[1]
           cos = (dx * vx + dy * vy) / (((dx ** 2 + dy ** 2)**0.5) * ((vx ** 2 + vy ** 2) ** 0.5))
+          puts "cos : #{cos}"
           next if cos < 0.2
           if vx * dy - vy * dx < 0
             mx = -vy
@@ -89,6 +94,7 @@ class Player
           end
           v = [] of List
           v << bi(-mx) << bi(-my)
+          puts "accel: #{mx} #{my} #{s.id}"
           cmd = [] of List
           cmd << CMD_ACC << s.id << v << [] of List
           cs << cmd
