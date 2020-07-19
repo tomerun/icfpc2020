@@ -231,14 +231,8 @@ class Inc < Arity1
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
-    end
-    if (x0 = @x0) && x0.is_a?(IntAtom)
-      return IntAtom.new(x0.v + 1)
-    else
-      return self
-    end
+    x0 = @x0.not_nil!.reduce
+    return IntAtom.new(x0.as(IntAtom).v + 1)
   end
 end
 
@@ -248,14 +242,8 @@ class Dec < Arity1
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
-    end
-    if (x0 = @x0) && x0.is_a?(IntAtom)
-      return IntAtom.new(x0.v - 1)
-    else
-      return self
-    end
+    x0 = @x0.not_nil!.reduce
+    return IntAtom.new(x0.as(IntAtom).v - 1)
   end
 end
 
@@ -265,17 +253,9 @@ class Add < Arity2
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
-    end
-    if x1 = @x1
-      @x1 = x1.reduce
-    end
-    if (x0 = @x0) && x0.is_a?(IntAtom) && (x1 = @x1) && x1.is_a?(IntAtom)
-      return IntAtom.new(x0.v + x1.v)
-    else
-      return self
-    end
+    x0 = @x0.not_nil!.reduce
+    x1 = @x1.not_nil!.reduce
+    return IntAtom.new(x0.as(IntAtom).v + x1.as(IntAtom).v)
   end
 end
 
@@ -304,17 +284,9 @@ class Mul < Arity2
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
-    end
-    if x1 = @x1
-      @x1 = x1.reduce
-    end
-    if (x0 = @x0) && x0.is_a?(IntAtom) && (x1 = @x1) && x1.is_a?(IntAtom)
-      return IntAtom.new(x0.v * x1.v)
-    else
-      return self
-    end
+    x0 = @x0.not_nil!.reduce
+    x1 = @x1.not_nil!.reduce
+    return IntAtom.new(x0.as(IntAtom).v * x1.as(IntAtom).v)
   end
 end
 
@@ -324,17 +296,9 @@ class Div < Arity2
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
-    end
-    if x1 = @x1
-      @x1 = x1.reduce
-    end
-    if (x0 = @x0) && x0.is_a?(IntAtom) && (x1 = @x1) && x1.is_a?(IntAtom)
-      return IntAtom.new(x0.v.tdiv(x1.v))
-    else
-      return self
-    end
+    x0 = @x0.not_nil!.reduce
+    x1 = @x1.not_nil!.reduce
+    return IntAtom.new(x0.as(IntAtom).v.tdiv(x1.as(IntAtom).v))
   end
 end
 
@@ -344,25 +308,13 @@ class Eq < Arity2
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
+    x0 = @x0.not_nil!.reduce
+    x1 = @x1.not_nil!.reduce
+    if x0.as(IntAtom).v == x1.as(IntAtom).v
+      return True.new
+    else
+      return False.new
     end
-    if x1 = @x1
-      @x1 = x1.reduce
-    end
-    if (x0 = @x0) && x0.is_a?(IntAtom) && (x1 = @x1) && x1.is_a?(IntAtom)
-      if x0.v == x1.v
-        return True.new
-      else
-        return False.new
-      end
-    end
-    if (x0 = @x0) && x0.is_a?(Var) && (x1 = @x1) && x1.is_a?(Var)
-      if x0.n == x1.n
-        return True.new
-      end
-    end
-    return self
   end
 end
 
@@ -372,20 +324,13 @@ class LessThan < Arity2
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
+    x0 = @x0.not_nil!.reduce
+    x1 = @x1.not_nil!.reduce
+    if x0.as(IntAtom).v < x1.as(IntAtom).v
+      return True.new
+    else
+      return False.new
     end
-    if x1 = @x1
-      @x1 = x1.reduce
-    end
-    if (x0 = @x0) && x0.is_a?(IntAtom) && (x1 = @x1) && x1.is_a?(IntAtom)
-      if x0.v < x1.v
-        return True.new
-      else
-        return False.new
-      end
-    end
-    return self
   end
 end
 
@@ -395,14 +340,8 @@ class Neg < Arity1
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
-    end
-    if (x0 = @x0) && x0.is_a?(IntAtom)
-      return IntAtom.new(-x0.v)
-    else
-      return self
-    end
+    x0 = @x0.not_nil!.reduce
+    return IntAtom.new(-x0.as(IntAtom).v)
   end
 end
 
@@ -431,18 +370,17 @@ class Ap < Arity2
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0 = x0.reduce
-      if x0 && !x0.is_a?(Ap) && !x0.param_full?
-        x0.add_param(@x1)
-        x0 = x0.reduce
-        return x0
+    node = self
+    while node.is_a?(Ap)
+      x0 = node.@x0.not_nil!
+      if !x0.param_full?
+        x0.add_param(node.@x1.not_nil!)
+        node = x0
+      else
+        node.x0 = x0.reduce
       end
     end
-    if x1 = @x1
-      @x1 = x1.reduce
-    end
-    return self
+    return node
   end
 end
 
@@ -452,22 +390,10 @@ class Scomb < Arity3
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
-    end
-    if x1 = @x1
-      @x1 = x1.reduce
-    end
-    if x2 = @x2
-      @x2 = x2.reduce
-    end
-    if @x2
-      left = Ap.new(@x0, @x2)
-      right = Ap.new(@x1, @x2)
-      top = Ap.new(left, right)
-      return top.reduce
-    end
-    return self
+    left = Ap.new(@x0, @x2)
+    right = Ap.new(@x1, @x2)
+    top = Ap.new(left, right)
+    return top
   end
 end
 
@@ -477,21 +403,9 @@ class Ccomb < Arity3
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
-    end
-    if x1 = @x1
-      @x1 = x1.reduce
-    end
-    if x2 = @x2
-      @x2 = x2.reduce
-    end
-    if @x2
-      inner = Ap.new(@x0, @x2)
-      outer = Ap.new(inner, @x1)
-      return outer.reduce
-    end
-    return self
+    inner = Ap.new(@x0, @x2)
+    outer = Ap.new(inner, @x1)
+    return outer
   end
 end
 
@@ -501,21 +415,9 @@ class Bcomb < Arity3
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
-    end
-    if x1 = @x1
-      @x1 = x1.reduce
-    end
-    if x2 = @x2
-      @x2 = x2.reduce
-    end
-    if @x2
-      inner = Ap.new(@x1, @x2)
-      outer = Ap.new(@x0, inner)
-      return outer.reduce
-    end
-    return self
+    inner = Ap.new(@x1, @x2)
+    outer = Ap.new(@x0, inner)
+    return outer
   end
 end
 
@@ -525,10 +427,7 @@ class True < Arity2
   end
 
   def reduce
-    if x0 = @x0
-      return x0.reduce
-    end
-    return self
+    return x0
   end
 end
 
@@ -538,27 +437,7 @@ class False < Arity2
   end
 
   def reduce
-    if x1 = @x1
-      return x1.reduce
-    end
-    return self
-  end
-end
-
-class Pwr2 < Arity1
-  def name
-    "pwr2"
-  end
-
-  def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
-    end
-    if (x0 = @x0) && x0.is_a?(IntAtom)
-      return IntAtom.new(BigInt.new(1) << x0.v)
-    else
-      return self
-    end
+    return x1
   end
 end
 
@@ -568,11 +447,7 @@ class Icomb < Arity1
   end
 
   def reduce
-    if x0 = @x0
-      return x0.reduce
-    else
-      return self
-    end
+    return x0
   end
 end
 
@@ -590,18 +465,13 @@ class Cons < Arity3
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
-    end
-    if x1 = @x1
-      @x1 = x1.reduce
-    end
     if @x2
       inner = Ap.new(@x2, @x0)
       outer = Ap.new(inner, @x1)
-      return outer.reduce
+      return outer
+    else
+      return self
     end
-    return self
   end
 end
 
@@ -611,11 +481,7 @@ class Car < Arity1
   end
 
   def reduce
-    if @x0
-      return Ap.new(@x0, True.new).reduce
-    else
-      return self
-    end
+    return Ap.new(@x0, True.new)
   end
 end
 
@@ -625,11 +491,7 @@ class Cdr < Arity1
   end
 
   def reduce
-    if @x0
-      return Ap.new(@x0, False.new).reduce
-    else
-      return self
-    end
+    return Ap.new(@x0, False.new)
   end
 end
 
@@ -653,15 +515,12 @@ class IsNil < Arity1
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
-    end
-    if (x0 = @x0) && x0.is_a?(NilAtom)
+    x0 = @x0.not_nil!.reduce
+    if x0.is_a?(NilAtom)
       return True.new
-    elsif (x0 = @x0) && x0.is_a?(Cons)
-      if x0.car && x0.cdr && !x0.x2
-        return False.new
-      end
+    else
+      assert(x0.is_a?(Cons))
+      return False.new
     end
     return self
   end
@@ -673,23 +532,12 @@ class IfZero < Arity3
   end
 
   def reduce
-    if x0 = @x0
-      @x0 = x0.reduce
+    x0 = @x0.not_nil!.reduce
+    if x0.as(IntAtom).v == 0
+      return @x1
+    else
+      return @x2
     end
-    if x1 = @x1
-      @x1 = x1.reduce
-    end
-    if x2 = @x2
-      @x2 = x2.reduce
-    end
-    if (x0 = @x0) && x0.is_a?(IntAtom)
-      if x0.v == 0
-        return @x1 if @x1
-      else
-        return @x2 if @x2
-      end
-    end
-    return self
   end
 end
 
