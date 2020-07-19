@@ -108,11 +108,11 @@ class Player
   end
 
   def start(x0 : BigInt, x1 : BigInt, x2 : BigInt, x3 : BigInt)
-    return request([START, @player_key, [x0, x1, x2, x3], [] of List])
+    return request([START, @player_key, [x0, x1, x2, x3]])
   end
 
   def commands(commands : List)
-    return request([COMMANDS, @player_key, commands, [] of List])
+    return request([COMMANDS, @player_key, commands])
   end
 
   def request(input : Array(List)) : List
