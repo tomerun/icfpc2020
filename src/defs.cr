@@ -13,7 +13,6 @@ abstract class Node
     # puts "node created #{self.class} #{@id}"
   end
 
-  abstract def arity
   abstract def name
   abstract def to_s(io : IO, level : Int)
   abstract def reduce_(ctx : ReduceContext, params : Array(Node))
@@ -100,37 +99,21 @@ abstract class Node
 end
 
 abstract class Arity0 < Node
-  def arity
-    return 0
-  end
 end
 
 abstract class Arity1 < Node
-  def arity
-    return 1
-  end
 end
 
 abstract class Arity2 < Node
-  def arity
-    return 2
-  end
 end
 
 abstract class Arity3 < Node
-  def arity
-    return 3
-  end
-
   def clone
     return self.class.new
   end
 end
 
 abstract class ArityN < Node
-  def arity
-    return 0
-  end
 end
 
 class IntAtom < Arity0
@@ -433,10 +416,6 @@ end
 class Cons < Arity3
   def initialize
     super()
-  end
-
-  def arity
-    return 2
   end
 
   def name

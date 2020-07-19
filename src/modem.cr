@@ -24,10 +24,13 @@ def mod(l : List, io)
   else
     if l.size == 0
       io << "00"
+    elsif l.size == 1
+      io << "11" << mod(l[0]) << "00"
     else
-      io << "11"
-      mod(l[0], io)
-      mod(l[1..], io)
+      (l.size - 1).times do |i|
+        io << "11" << mod(l[i])
+      end
+      io << mod(l[-1])
     end
   end
 end
@@ -38,10 +41,34 @@ def mod(l : List) : String
   end
 end
 
-def demod(str : String, pos : Int32, depth : Int32) : Tuple(Node, Int32)
+def mod(n : Node, io)
+  case n
+  when Ap
+    assert(n.x0.as(Ap).x0.is_a?(Cons))
+    car = n.x0.as(Ap).x1
+    cdr = n.x1
+    io << "11"
+    mod(car, io)
+    mod(cdr, io)
+  when IntAtom
+    mod(n.v, io)
+  when NilAtom
+    io << "00"
+  else
+    assert(false)
+  end
+end
+
+def mod(n : Node) : String
+  return String.build do |io|
+    mod(n, io)
+  end
+end
+
+def demod(str : String, pos : Int32) : Tuple(Node, Int32)
   if str[pos] == '1' && str[pos + 1] == '1'
-    car, pos = demod(str, pos + 2, 0)
-    cdr, pos = demod(str, pos, depth + 1)
+    car, pos = demod(str, pos + 2)
+    cdr, pos = demod(str, pos)
     return {Ap.new(Ap.new(Cons.new, car), cdr), pos}
   elsif str[pos] == '0' && str[pos + 1] == '0'
     return {NilAtom.new, pos + 2}
@@ -64,7 +91,7 @@ def demod(str : String, pos : Int32, depth : Int32) : Tuple(Node, Int32)
 end
 
 def demod(str : String) : Node
-  return demod(str, 0, 0)[0]
+  return demod(str, 0)[0]
 end
 
 def from_list(l : Array(List)) : Node
