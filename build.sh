@@ -1,3 +1,3 @@
 #!/bin/sh
 
-shards build --release
+shards build --release app
