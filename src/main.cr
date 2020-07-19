@@ -102,7 +102,8 @@ class Player
         if !cs.empty?
           cs << [] of List
         end
-        commands(cs)
+        res = commands(cs)
+        set_ships(res[3])
       end
     rescue e
       puts "Unexpected server response:"
