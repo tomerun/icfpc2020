@@ -35,8 +35,8 @@ class Reducer
       flag = result[0].as(BigInt)
       puts "flag:#{flag}"
       state_list = result[1].as(Array(List))
-      puts "state:#{state}"
       state = from_list(state_list)
+      puts "state:#{state}"
       data = result[2]
       puts "data:#{data}"
       break if flag == 0
