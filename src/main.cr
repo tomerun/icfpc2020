@@ -57,7 +57,6 @@ class Player
     begin
       res = join([] of List)
       @is_attack = res[2].as(Array(List))[1] == ROLE_ATTACK
-      set_ships(res[3])
       res = start(bi(1), bi(1), bi(1), bi(1))
       set_ships(res[3])
       while true
@@ -124,6 +123,9 @@ class Player
       ret = get_list(res.body)
       puts "Server response: #{ret}"
       assert(ret[0] == 1)
+      if ret[1] == 2
+        exit(0)
+      end
       return ret
     else
       puts "Unexpected server response:"
