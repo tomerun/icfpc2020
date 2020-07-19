@@ -143,27 +143,28 @@ def draw(data : Array(List))
     miny = {miny, p[0]}.min
     maxy = {maxy, p[0]}.max
   end
-  puts "(#{minx},#{miny})-(#{maxx},#{maxy})"
-  screen = Array.new(maxy - miny + 1) { Array.new(maxx - minx + 1, false) }
-  pos.each do |p|
-    screen[p[0] - miny][p[1] - minx] = true
-  end
-  top = "     "
-  x_pos = minx
-  while top.size < maxx - minx + 7
-    add = x_pos.to_s
-    add += " " * (10 - add.size)
-    top += add
-    x_pos += 10
-  end
-  puts
-  puts top
-  miny.upto(maxy) do |y|
-    printf("% 4d ", y)
-    screen[y - miny].each do |pixel|
-      print(pixel ? "#" : " ")
+  File.open("picture.txt", "w") do |f|
+    f.puts "(#{minx},#{miny})-(#{maxx},#{maxy})"
+    screen = Array.new(maxy - miny + 1) { Array.new(maxx - minx + 1, false) }
+    pos.each do |p|
+      screen[p[0] - miny][p[1] - minx] = true
     end
-    puts
+    top = "     "
+    x_pos = minx
+    while top.size < maxx - minx + 7
+      add = x_pos.to_s
+      add += " " * (10 - add.size)
+      top += add
+      x_pos += 10
+    end
+    f.puts top
+    miny.upto(maxy) do |y|
+      f.printf("% 4d ", y)
+      screen[y - miny].each do |pixel|
+        f.print(pixel ? "#" : " ")
+      end
+      f.puts
+    end
   end
 end
 
