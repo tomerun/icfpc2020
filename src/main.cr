@@ -105,19 +105,21 @@ class Player
   end
 
   def join(param : List)
-    return request([JOIN, @player_key, param])
+    return request([JOIN, @player_key, param, [] of List])
   end
 
   def start(x0 : BigInt, x1 : BigInt, x2 : BigInt, x3 : BigInt)
-    return request([START, @player_key, [x0, x1, x2, x3]])
+    return request([START, @player_key, [x0, x1, x2, x3], [] of List])
   end
 
   def commands(commands : List)
-    return request([COMMANDS, @player_key, commands])
+    return request([COMMANDS, @player_key, commands, [] of List])
   end
 
   def request(input : Array(List)) : List
-    res = HTTP::Client.post(@uri, body: mod(input))
+    body = mod(input)
+    puts "req: #{body}"
+    res = HTTP::Client.post(@uri, body: body)
     if res.status_code == 200
       ret = get_list(res.body)
       puts "Server response: #{ret}"
