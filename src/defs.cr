@@ -1,22 +1,35 @@
 require "big"
 
 abstract class Node
+  @reduced : Node?
+  property :reduced
+
   abstract def name
   abstract def to_s(io : IO, level : Int)
-  abstract def clone
-end
+  abstract def reduce_(ctx : ReduceContext, params : Array(Node))
 
-abstract class Arity0 < Node
-  def param_count
-    return 0
+  def reduce(ctx : ReduceContext, params : Array(Node))
+    if @reduced
+      return @reduced
+    end
+    # puts "reduce #{self.hash} #{self.inspect}"
+    node = self
+    while true
+      ret = node.reduce_(ctx, params).not_nil!
+      params.clear
+      if ret == node
+        @reduced = node
+        break
+      end
+      node = ret
+    end
+    # puts "end reduce #{self.hash}"
+    # puts String.build { |io| ctx.root.not_nil!.to_s(io, 0) }
+    return node
   end
 
-  def param_full?
-    return true
-  end
-
-  def add_param(param)
-    raise Exception.new("invalid param set:#{param}")
+  def reduce(ctx : ReduceContext)
+    return reduce(ctx, [] of Node)
   end
 
   def to_s(io)
@@ -26,168 +39,25 @@ abstract class Arity0 < Node
   def to_s(io, level)
     io << "  " * level << self.name << " #{self.hash}" << "\n"
   end
+
+  def clear
+    return self.reduced = nil
+  end
+end
+
+abstract class Arity0 < Node
 end
 
 abstract class Arity1 < Node
-  getter :x0
-
-  def initialize(@x0 : Node? = nil)
-  end
-
-  def param_count
-    return @x0.nil? ? 0 : 1
-  end
-
-  def param_full?
-    return !@x0.nil?
-  end
-
-  def add_param(param)
-    raise Exception.new("invalid param set:#{param}") if param_full?
-    @x0 = param
-  end
-
-  def to_s(io)
-    if !@x0
-      io << self.name
-    else
-      io << "ap #{self.name} " << @x0
-    end
-  end
-
-  def to_s(io, level)
-    if x0 = @x0
-      io << "  " * level << "ap" << "\n"
-      io << "  " * (level + 1) << self.name << " #{self.hash}" << "\n"
-      x0.to_s(io, level + 1)
-    else
-      io << "  " * level << self.name << " #{self.hash}" << "\n"
-    end
-  end
-
-  def clone
-    return self.class.new(@x0.clone)
-  end
 end
 
 abstract class Arity2 < Node
-  getter :x0, :x1
-
-  def initialize(@x0 : Node? = nil, @x1 : Node? = nil)
-  end
-
-  def param_count
-    return @x0.nil? ? 0 : @x1.nil? ? 1 : 2
-  end
-
-  def param_full?
-    return !@x1.nil?
-  end
-
-  def add_param(param)
-    raise Exception.new("invalid param set:#{param}") if param_full?
-    if !@x0
-      @x0 = param
-    else
-      @x1 = param
-    end
-  end
-
-  def to_s(io)
-    if !@x0
-      io << self.name
-    elsif !@x1
-      io << "ap #{self.name} " << @x0
-    else
-      io << "ap ap #{self.name} " << @x0 << " " << @x1
-    end
-  end
-
-  def to_s(io, level)
-    if x1 = @x1
-      io << "  " * level << "ap" << "\n"
-      io << "  " * (level + 1) << "ap" << "\n"
-      io << "  " * (level + 2) << self.name << " #{self.hash}" << "\n"
-      @x0.not_nil!.to_s(io, level + 2)
-      x1.to_s(io, level + 1)
-    elsif x0 = @x0
-      io << "  " * level << "ap" << "\n"
-      io << "  " * (level + 1) << self.name << " #{self.hash}" << "\n"
-      x0.to_s(io, level + 1)
-    else
-      io << "  " * level << self.name << " #{self.hash}" << "\n"
-    end
-  end
-
-  def clone
-    return self.class.new(@x0.clone, @x1.clone)
-  end
 end
 
 abstract class Arity3 < Node
-  getter :x0, :x1, :x2
+end
 
-  def initialize(@x0 : Node? = nil, @x1 : Node? = nil, @x2 : Node? = nil)
-  end
-
-  def param_count
-    return @x0.nil? ? 0 : @x1.nil? ? 1 : @x2.nil? ? 2 : 3
-  end
-
-  def param_full?
-    return !@x2.nil?
-  end
-
-  def add_param(param)
-    raise Exception.new("invalid param set:#{param}") if param_full?
-    if !@x0
-      @x0 = param
-    elsif !@x1
-      @x1 = param
-    else
-      @x2 = param
-    end
-  end
-
-  def to_s(io)
-    if !@x0
-      io << self.name
-    elsif !@x1
-      io << "ap #{self.name} " << @x0
-    elsif !@x2
-      io << "ap ap #{self.name} " << @x0 << " " << @x1
-    else
-      io << "ap ap ap #{self.name} " << @x0 << " " << @x1 << " " << @x2
-    end
-  end
-
-  def to_s(io, level)
-    if x2 = @x2
-      io << "  " * level << "ap" << "\n"
-      io << "  " * (level + 1) << "ap" << "\n"
-      io << "  " * (level + 2) << "ap" << "\n"
-      io << "  " * (level + 3) << self.name << " #{self.hash}" << "\n"
-      @x0.not_nil!.to_s(io, level + 3)
-      @x1.not_nil!.to_s(io, level + 2)
-      x2.to_s(io, level + 1)
-    elsif x1 = @x1
-      io << "  " * level << "ap" << "\n"
-      io << "  " * (level + 1) << "ap" << "\n"
-      io << "  " * (level + 2) << self.name << " #{self.hash}" << "\n"
-      @x0.not_nil!.to_s(io, level + 2)
-      x1.to_s(io, level + 1)
-    elsif x0 = @x0
-      io << "  " * level << "ap" << "\n"
-      io << "  " * (level + 1) << self.name << " #{self.hash}" << "\n"
-      x0.to_s(io, level + 1)
-    else
-      io << "  " * level << self.name << " #{self.hash}" << "\n"
-    end
-  end
-
-  def clone
-    return self.class.new(@x0.clone, @x1.clone, @x2.clone)
-  end
+abstract class ArityN < Node
 end
 
 class IntAtom < Arity0
@@ -204,24 +74,12 @@ class IntAtom < Arity0
     @v = BigInt.ZERO
   end
 
-  def to_s(io)
-    io << @v
-  end
-
-  def to_s(io, level)
-    io << "  " * level << @v << "\n"
-  end
-
   def name
     @v.to_s
   end
 
-  def reduce
+  def reduce_(ctx, params)
     return self
-  end
-
-  def clone
-    return IntAtom.new(@v)
   end
 end
 
@@ -230,8 +88,8 @@ class Inc < Arity1
     "inc"
   end
 
-  def reduce
-    x0 = @x0.not_nil!.reduce
+  def reduce_(ctx, params)
+    x0 = params[0].reduce(ctx)
     return IntAtom.new(x0.as(IntAtom).v + 1)
   end
 end
@@ -241,8 +99,8 @@ class Dec < Arity1
     "dec"
   end
 
-  def reduce
-    x0 = @x0.not_nil!.reduce
+  def reduce_(ctx, params)
+    x0 = params[0].reduce(ctx)
     return IntAtom.new(x0.as(IntAtom).v - 1)
   end
 end
@@ -252,29 +110,30 @@ class Add < Arity2
     "add"
   end
 
-  def reduce
-    x0 = @x0.not_nil!.reduce
-    x1 = @x1.not_nil!.reduce
+  def reduce_(ctx, params)
+    x0 = params[0].reduce(ctx)
+    x1 = params[1].reduce(ctx)
     return IntAtom.new(x0.as(IntAtom).v + x1.as(IntAtom).v)
   end
 end
 
-class Var < Arity0
+class Var < ArityN
   getter :n
 
   def initialize(@n : Int32)
+    super()
   end
 
   def name
     ":#{@n}"
   end
 
-  def reduce
-    return self
-  end
-
-  def clone
-    return self.class.new(@n)
+  def reduce_(ctx, params)
+    node = ctx.vars[@n]
+    params.each do |param|
+      node = Ap.new(param, node)
+    end
+    return node.reduce(ctx)
   end
 end
 
@@ -283,9 +142,9 @@ class Mul < Arity2
     "mul"
   end
 
-  def reduce
-    x0 = @x0.not_nil!.reduce
-    x1 = @x1.not_nil!.reduce
+  def reduce_(ctx, params)
+    x0 = params[0].reduce(ctx)
+    x1 = params[1].reduce(ctx)
     return IntAtom.new(x0.as(IntAtom).v * x1.as(IntAtom).v)
   end
 end
@@ -295,9 +154,9 @@ class Div < Arity2
     "div"
   end
 
-  def reduce
-    x0 = @x0.not_nil!.reduce
-    x1 = @x1.not_nil!.reduce
+  def reduce_(ctx, params)
+    x0 = params[0].reduce(ctx)
+    x1 = params[1].reduce(ctx)
     return IntAtom.new(x0.as(IntAtom).v.tdiv(x1.as(IntAtom).v))
   end
 end
@@ -307,9 +166,9 @@ class Eq < Arity2
     "eq"
   end
 
-  def reduce
-    x0 = @x0.not_nil!.reduce
-    x1 = @x1.not_nil!.reduce
+  def reduce_(ctx, params)
+    x0 = params[0].reduce(ctx)
+    x1 = params[1].reduce(ctx)
     if x0.as(IntAtom).v == x1.as(IntAtom).v
       return True.new
     else
@@ -323,9 +182,9 @@ class LessThan < Arity2
     "lt"
   end
 
-  def reduce
-    x0 = @x0.not_nil!.reduce
-    x1 = @x1.not_nil!.reduce
+  def reduce_(ctx, params)
+    x0 = params[0].reduce(ctx)
+    x1 = params[1].reduce(ctx)
     if x0.as(IntAtom).v < x1.as(IntAtom).v
       return True.new
     else
@@ -339,13 +198,18 @@ class Neg < Arity1
     "neg"
   end
 
-  def reduce
-    x0 = @x0.not_nil!.reduce
+  def reduce_(ctx, params)
+    x0 = params[0].reduce(ctx)
     return IntAtom.new(-x0.as(IntAtom).v)
   end
 end
 
 class Ap < Arity2
+  property :x0, :x1
+
+  def initialize(@x0 : Node, @x1 : Node)
+  end
+
   def name
     "ap"
   end
@@ -369,18 +233,47 @@ class Ap < Arity2
     end
   end
 
-  def reduce
+  def reduce_(ctx, params)
     node = self
-    while node.is_a?(Ap)
-      x0 = node.@x0.not_nil!
-      if !x0.param_full?
-        x0.add_param(node.@x1.not_nil!)
-        node = x0
-      else
-        node.x0 = x0.reduce
+    while node.is_a?(Ap) && !node.reduced
+      # puts "reduce_ #{node.hash} #{node}"
+      args = [] of Node
+      args << node.x1.not_nil!
+      op = node.x0.not_nil!
+      if op.is_a?(Ap)
+        op = node.x0 = op.reduce(ctx).not_nil!
       end
+      if !op.is_a?(Ap)
+        if op.is_a?(Arity1)
+          node = op.reduce(ctx, args)
+          next
+        end
+      else
+        args.unshift(op.x1.not_nil!)
+        op = op.x0.not_nil!
+        if !op.is_a?(Ap)
+          if op.is_a?(Arity2) || op.is_a?(Var) || op.is_a?(Cons)
+            node = op.reduce(ctx, args)
+            next
+          end
+        else
+          args.unshift(op.x1.not_nil!)
+          op = op.x0.not_nil!
+          if op.is_a?(Arity3) || op.is_a?(Var)
+            node = op.reduce(ctx, args)
+            next
+          end
+        end
+      end
+      break
     end
     return node
+  end
+
+  def clear
+    @x0.clear
+    @x1.clear
+    @reduced = nil
   end
 end
 
@@ -389,9 +282,9 @@ class Scomb < Arity3
     "s"
   end
 
-  def reduce
-    left = Ap.new(@x0, @x2)
-    right = Ap.new(@x1, @x2)
+  def reduce_(ctx, params)
+    left = Ap.new(params[0], params[2])
+    right = Ap.new(params[1], params[2])
     top = Ap.new(left, right)
     return top
   end
@@ -402,9 +295,9 @@ class Ccomb < Arity3
     "c"
   end
 
-  def reduce
-    inner = Ap.new(@x0, @x2)
-    outer = Ap.new(inner, @x1)
+  def reduce_(ctx, params)
+    inner = Ap.new(params[0], params[2])
+    outer = Ap.new(inner, params[1])
     return outer
   end
 end
@@ -414,9 +307,9 @@ class Bcomb < Arity3
     "b"
   end
 
-  def reduce
-    inner = Ap.new(@x1, @x2)
-    outer = Ap.new(@x0, inner)
+  def reduce_(ctx, params)
+    inner = Ap.new(params[1], params[2])
+    outer = Ap.new(params[0], inner)
     return outer
   end
 end
@@ -426,8 +319,8 @@ class True < Arity2
     "t"
   end
 
-  def reduce
-    return x0
+  def reduce_(ctx, params)
+    return params[0]
   end
 end
 
@@ -436,8 +329,8 @@ class False < Arity2
     "f"
   end
 
-  def reduce
-    return x1
+  def reduce_(ctx, params)
+    return params[1]
   end
 end
 
@@ -446,28 +339,32 @@ class Icomb < Arity1
     "i"
   end
 
-  def reduce
-    return x0
+  def reduce_(ctx, params)
+    return params[0]
   end
 end
 
 class Cons < Arity3
-  def car
-    @x0
+  def initialize
+    super()
   end
 
-  def cdr
-    @x1
+  def initialize(@car : Node?, @cdr : Node?)
   end
 
   def name
     "cons"
   end
 
-  def reduce
-    if @x2
-      inner = Ap.new(@x2, @x0)
-      outer = Ap.new(inner, @x1)
+  def reduce_(ctx, params)
+    if params.size == 3
+      inner = Ap.new(params[2], params[0])
+      outer = Ap.new(inner, params[1])
+      return outer
+    elsif params.size == 2
+      inner = Ap.new(self, params[0].reduce(ctx).not_nil!)
+      outer = Ap.new(inner, params[1].reduce(ctx).not_nil!)
+      outer.reduced = outer
       return outer
     else
       return self
@@ -480,8 +377,8 @@ class Car < Arity1
     "car"
   end
 
-  def reduce
-    return Ap.new(@x0, True.new)
+  def reduce_(ctx, params)
+    return Ap.new(params[0], True.new)
   end
 end
 
@@ -490,8 +387,8 @@ class Cdr < Arity1
     "cdr"
   end
 
-  def reduce
-    return Ap.new(@x0, False.new)
+  def reduce_(ctx, params)
+    return Ap.new(params[0], False.new)
   end
 end
 
@@ -500,8 +397,8 @@ class NilAtom < Arity1
     "nil"
   end
 
-  def reduce
-    if @x0
+  def reduce_(ctx, params)
+    if params.size == 1
       return True.new
     else
       return self
@@ -514,8 +411,8 @@ class IsNil < Arity1
     "isnil"
   end
 
-  def reduce
-    x0 = @x0.not_nil!.reduce
+  def reduce_(ctx, params)
+    x0 = params[0].reduce(ctx)
     if x0.is_a?(NilAtom)
       return True.new
     else
@@ -531,24 +428,40 @@ class IfZero < Arity3
     "if0"
   end
 
-  def reduce
-    x0 = @x0.not_nil!.reduce
+  def reduce_(ctx, params)
+    x0 = params[0].reduce(ctx, params)
     if x0.as(IntAtom).v == 0
-      return @x1
+      return params[1]
     else
-      return @x2
+      return params[2]
     end
   end
 end
 
 class Assign
-  getter :var, :node
+  getter :num, :node
 
-  def initialize(@var : Var, @node : Node)
+  def initialize(@num : Int32, @node : Node)
   end
 
   def to_s(io)
-    io << @var << " = " << @node
+    io << @num << " = " << @node
+  end
+end
+
+class ReduceContext
+  getter :vars
+  property :root
+  @root : Node?
+
+  def initialize
+    @vars = {} of Int32 => Node
+  end
+
+  def to_s(io)
+    @vars.each do |k, v|
+      io << k << " = " << v << "\n"
+    end
   end
 end
 

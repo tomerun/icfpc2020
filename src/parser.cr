@@ -32,11 +32,10 @@ class Parser
     end
     @pos += 1
     num = next_token.to_i
-    var = Var.new(num)
     assert(@cs[@pos...(@pos + 3)].join == " = ", "#{@cs.join} #{@pos}")
     @pos += 3
     expr = parse_expr().not_nil!
-    return Assign.new(var, expr)
+    return Assign.new(num, expr)
   end
 
   def parse_expr : Node?
@@ -47,8 +46,8 @@ class Parser
     elsif token[0] == ':'
       return Var.new(token[1..].to_i)
     elsif token == "ap"
-      x0 = parse_expr()
-      x1 = parse_expr()
+      x0 = parse_expr().not_nil!
+      x1 = parse_expr().not_nil!
       return Ap.new(x0, x1)
     else
       create_node(token, "inc", Inc)
@@ -64,7 +63,6 @@ class Parser
       create_node(token, "b", Bcomb)
       create_node(token, "t", True)
       create_node(token, "f", False)
-      create_node(token, "pwr2", Pwr2)
       create_node(token, "i", Icomb)
       create_node(token, "cons", Cons)
       create_node(token, "car", Car)
