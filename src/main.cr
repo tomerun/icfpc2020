@@ -103,15 +103,30 @@ class Player
   end
 
   def join(param : List)
-    return request([JOIN, @player_key, param, [] of List])
+    res = request([JOIN, @player_key, param, [] of List])
+    puts "static_info:#{res[2]}"
+    return res
   end
 
   def start(x0 : BigInt, x1 : BigInt, x2 : BigInt, x3 : BigInt)
-    return request([START, @player_key, [x0, x1, x2, x3, [] of List], [] of List])
+    res = request([START, @player_key, [x0, x1, x2, x3, [] of List], [] of List])
+    print_game_state(res[3])
+    return res
   end
 
   def commands(commands : List)
-    return request([COMMANDS, @player_key, commands, [] of List])
+    res = request([COMMANDS, @player_key, commands, [] of List])
+    print_game_state(res[3])
+    return res
+  end
+
+  def print_game_state(game_state)
+    gl = game_state.as(Array(List))
+    puts "tick:#{gl[0]}"
+    puts "size?:#{gl[1]}"
+    gl[2].as(Array(List)).each do |s|
+      puts s
+    end
   end
 
   def create_acc(ship_id, mx, my)
@@ -129,13 +144,13 @@ class Player
 
   def request(input : Array(List)) : List
     body = mod(input)
-    puts "req: #{body}"
+    # puts "req: #{body}"
     res = HTTP::Client.post(@uri, body: body)
     if res.status_code == 200
       ret = get_list(res.body)
-      puts "Server response: #{ret}"
-      puts "#{res.body}"
+      # puts "Server response: #{ret}"
       assert(ret[0] == 1)
+      puts "stage:#{ret[1]}"
       if ret[1] == 2
         exit(0)
       end
@@ -144,6 +159,7 @@ class Player
       puts "Unexpected server response:"
       puts "HTTP code: %d" % res.status_code
       puts "Response body: %s" % res.body
+      puts "#{get_list(ret)}"
       exit(2)
     end
   end
