@@ -159,7 +159,7 @@ class Player
       puts "Unexpected server response:"
       puts "HTTP code: %d" % res.status_code
       puts "Response body: %s" % res.body
-      puts "#{get_list(ret)}"
+      puts "#{get_list(res.body)}"
       exit(2)
     end
   end
