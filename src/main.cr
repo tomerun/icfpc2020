@@ -59,9 +59,9 @@ class Player
     begin
       res = join([] of List)
       @is_attack = res[2].as(Array(List))[1] == ROLE_ATTACK
-      x0 = rand(101) + 150
-      x1 = rand(21)
-      x2 = rand(16) + 5
+      x0 = rand(101) + 160
+      x1 = 0
+      x2 = 10
       x3 = 1
       puts "params:#{[x0, x1, x2, x3]}"
       res = start(bi(x0), bi(x1), bi(x2), bi(x3))
@@ -176,5 +176,6 @@ end
 
 server_url = ARGV[0]
 player_key = BigInt.new(ARGV[1])
+puts "server_url:#{server_url}"
 player = Player.new(server_url, player_key)
 player.play
