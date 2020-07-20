@@ -61,7 +61,7 @@ class Player
       @is_attack = res[2].as(Array(List))[1] == ROLE_ATTACK
       x0 = rand(101) + 150
       x1 = rand(21)
-      x2 = rand(21) + 5
+      x2 = rand(16) + 5
       x3 = 1
       puts "params:#{[x0, x1, x2, x3]}"
       res = start(bi(x0), bi(x1), bi(x2), bi(x3))
