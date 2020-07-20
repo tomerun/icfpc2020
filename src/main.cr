@@ -59,7 +59,7 @@ class Player
     begin
       res = join([] of List)
       @is_attack = res[2].as(Array(List))[1] == ROLE_ATTACK
-      x0 = rand(101) + 160
+      x0 = rand(201) + 300
       x1 = 0
       x2 = 10
       x3 = 1
