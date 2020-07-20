@@ -59,7 +59,11 @@ class Player
     begin
       res = join([] of List)
       @is_attack = res[2].as(Array(List))[1] == ROLE_ATTACK
-      res = start(bi(200), bi(10), bi(10), bi(1))
+      x0 = rand(101) + 150
+      x1 = rand(31)
+      x2 = rand(31) + 5
+      x3 = 1
+      res = start(bi(x0), bi(x1), bi(x2), bi(x3))
       set_ships(res[3])
       while true
         stage = res[1].as(BigInt)
