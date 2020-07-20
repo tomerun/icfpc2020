@@ -61,10 +61,16 @@ class Player
       res = join([] of List)
       @is_attack = res[2].as(Array(List))[1] == ROLE_ATTACK
       max_cost = @static_info[2].as(Array(List))[0].as(BigInt).to_i
-      x0 = rand(16) + max_cost - 125
-      x1 = 0
-      x2 = 10
-      x3 = 1
+      if @is_attack
+        x1 = 0
+        x2 = 8
+        x3 = 1
+      else
+        x1 = 0
+        x2 = 12
+        x3 = 1
+      end
+      x0 = max_cost - x1 * 4 - x2 * 12 - x3 * 2
       puts "params:#{[x0, x1, x2, x3]}"
       res = start(bi(x0), bi(x1), bi(x2), bi(x3))
       set_ships(res[3])
