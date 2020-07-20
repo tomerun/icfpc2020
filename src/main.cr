@@ -32,6 +32,7 @@ class Player
     @is_attack = false
     @my_ships = [] of Ship
     @enemy_ships = [] of Ship
+    @static_info = [] of List
   end
 
   def set_ships(game_state : List)
@@ -59,7 +60,8 @@ class Player
     begin
       res = join([] of List)
       @is_attack = res[2].as(Array(List))[1] == ROLE_ATTACK
-      x0 = rand(16) + 375
+      max_cost = @static_info[2].as(Array(List))[0].as(BigInt).to_i
+      x0 = rand(16) + max_cost - 125
       x1 = 0
       x2 = 10
       x3 = 1
@@ -109,6 +111,7 @@ class Player
 
   def join(param : List)
     res = request([JOIN, @player_key, param, [] of List])
+    @static_info = res[2].as(Array(List))
     puts "static_info:#{res[2]}"
     return res
   end
