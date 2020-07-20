@@ -2,6 +2,8 @@ require "./defs.cr"
 require "./modem.cr"
 require "./parser.cr"
 require "http/client"
+require "stumpy_png"
+include StumpyPNG
 
 API_URL = URI.parse("https://icfpc2020-api.testkontur.ru/aliens/send?apiKey=#{ENV["API_KEY"]}")
 
@@ -143,28 +145,88 @@ def draw(data : Array(List))
     miny = {miny, p[0]}.min
     maxy = {maxy, p[0]}.max
   end
-  File.open("picture.txt", "w") do |f|
-    f.puts "(#{minx},#{miny})-(#{maxx},#{maxy})"
-    screen = Array.new(maxy - miny + 1) { Array.new(maxx - minx + 1, false) }
-    pos.each do |p|
-      screen[p[0] - miny][p[1] - minx] = true
-    end
-    top = "     "
-    x_pos = minx
-    while top.size < maxx - minx + 7
-      add = x_pos.to_s
-      add += " " * (10 - add.size)
-      top += add
-      x_pos += 10
-    end
-    f.puts top
-    miny.upto(maxy) do |y|
-      f.printf("% 4d ", y)
-      screen[y - miny].each do |pixel|
-        f.print(pixel ? "#" : " ")
+
+  w = maxx - minx + 1
+  h = maxy - miny + 1
+  color = RGBA::BLACK
+  scale = 5
+  canvas = Canvas.new(w * scale, h * scale)
+  puts "(#{minx},#{miny})-(#{maxx},#{maxy})"
+  pos.each do |p|
+    x = p[1] - minx
+    y = p[0] - miny
+    scale.times do |i|
+      scale.times do |j|
+        canvas[x * scale + i, y * scale + j] = color
       end
-      f.puts
     end
+  end
+  10.step(to: maxy, by: 10) do |y|
+    draw_horz_line(canvas, (y - miny) * scale, RGBA::BLUE)
+  end
+  -10.step(to: miny, by: -10) do |y|
+    draw_horz_line(canvas, (y - miny) * scale, RGBA::BLUE)
+  end
+  50.step(to: maxy, by: 50) do |y|
+    draw_horz_line(canvas, (y - miny) * scale, RGBA::GREEN)
+  end
+  -50.step(to: miny, by: -50) do |y|
+    draw_horz_line(canvas, (y - miny) * scale, RGBA::GREEN)
+  end
+  if miny <= 0 && 0 <= maxy
+    draw_horz_line(canvas, -miny * scale, RGBA::RED)
+  end
+  10.step(to: maxx, by: 10) do |x|
+    draw_vert_line(canvas, (x - minx) * scale, RGBA::BLUE)
+  end
+  -10.step(to: minx, by: -10) do |x|
+    draw_vert_line(canvas, (x - minx) * scale, RGBA::BLUE)
+  end
+  50.step(to: maxx, by: 50) do |x|
+    draw_vert_line(canvas, (x - minx) * scale, RGBA::GREEN)
+  end
+  -50.step(to: minx, by: -50) do |x|
+    draw_vert_line(canvas, (x - minx) * scale, RGBA::GREEN)
+  end
+  if minx <= 0 && 0 <= maxx
+    draw_vert_line(canvas, -minx * scale, RGBA::RED)
+  end
+  StumpyPNG.write(canvas, "picture.png")
+
+  # File.open("picture.txt", "w") do |f|
+  #   f.puts "(#{minx},#{miny})-(#{maxx},#{maxy})"
+  #   screen = Array.new(maxy - miny + 1) { Array.new(maxx - minx + 1, false) }
+  #   pos.each do |p|
+  #     screen[p[0] - miny][p[1] - minx] = true
+  #   end
+  #   top = "     "
+  #   x_pos = minx
+  #   while top.size < maxx - minx + 7
+  #     add = x_pos.to_s
+  #     add += " " * (10 - add.size)
+  #     top += add
+  #     x_pos += 10
+  #   end
+  #   f.puts top
+  #   miny.upto(maxy) do |y|
+  #     f.printf("% 4d ", y)
+  #     screen[y - miny].each do |pixel|
+  #       f.print(pixel ? "#" : " ")
+  #     end
+  #     f.puts
+  #   end
+  # end
+end
+
+def draw_horz_line(canvas, y, color)
+  canvas.width.times do |x|
+    canvas[x, y] = color
+  end
+end
+
+def draw_vert_line(canvas, x, color)
+  canvas.height.times do |y|
+    canvas[x, y] = color
   end
 end
 
