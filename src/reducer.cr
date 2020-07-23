@@ -31,6 +31,7 @@ class Reducer
     click_pos = [] of Tuple(Int32, Int32)
     click_pos = [[0, 0], [-3, -3], [-3, -3], [-3, -3], [-3, -3], [-3, -3], [-3, -3], [0, 0], [8, 4], [2, -8], [3, 6], [0, -14], [-4, 10], [9, -3], [-4, 10], [0, 0],
                  [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0],
+                 [18, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0],
     ]
 
     while true
@@ -38,11 +39,12 @@ class Reducer
         # search(protocol, state)
         puts "input next pos"
         pos = read_line.split.map(&.to_i)
+        next if pos.empty?
       else
         pos = click_pos.shift
       end
 
-      data = Ap.new(Ap.new(Cons.new, IntAtom.new(pos[0])), IntAtom.new(pos[1]))
+      data = make_cons(IntAtom.new(pos[0]), IntAtom.new(pos[1]))
       while true
         reduced = execute_single(protocol.not_nil!, state, data)
         flag = reduced.as(Ap).x0.as(Ap).x1.as(IntAtom)
@@ -66,11 +68,15 @@ class Reducer
     end
   end
 
+  def make_cons(car : Node, cdr : Node)
+    return Ap.new(Ap.new(Cons.new, car), cdr)
+  end
+
   def search(protocol, state)
     prev_state = get_list(state)
     -60.upto(3) do |y|
       -7.upto(45) do |x|
-        data = Ap.new(Ap.new(Cons.new, IntAtom.new(x)), IntAtom.new(y))
+        data = make_cons(IntAtom.new(x), IntAtom.new(y))
         puts "click #{x} #{y}"
         while true
           reduced = execute_single(protocol.not_nil!, state, data)
